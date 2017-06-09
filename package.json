@@ -16,7 +16,7 @@
     "serve-favicon": "^2.4.2"
   },
   "devDependencies": {
-    "@rispa/eslint-config": "^0.1.0",
+    "@rispa/eslint-config": "^1.0.0",
     "@rispa/webpack": "^0.1.0"
   },
   "scripts": {
