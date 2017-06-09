@@ -1,10 +1,10 @@
+import { start } from '@rispa/core/events'
+import { server } from '../events'
 import runServer from '../src/server'
 
 const activator = on => {
-  on('start', (command, registry) => {
-    if (command === 'server') {
-      runServer(registry)
-    }
+  on(start(server), (command, registry) => {
+    runServer(registry)
   })
 }
 
