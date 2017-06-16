@@ -3,7 +3,7 @@ import { server } from '../events'
 import runServer from '../src/server'
 
 const activator = on => {
-  on(start(server), (command, registry) => {
+  on(start(server), registry => {
     runServer(registry)
   })
 }
