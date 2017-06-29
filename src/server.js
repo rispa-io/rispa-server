@@ -2,7 +2,6 @@ import path from 'path'
 import Express from 'express'
 import compression from 'compression'
 import favicon from 'serve-favicon'
-import { devServer } from '@rispa/webpack'
 import config from '@rispa/config'
 import logger from './logger'
 
@@ -22,7 +21,10 @@ const runServer = registry => {
     app.use(compression())
     app.use(config.publicPath, Express.static(config.outputPath))
   } else {
-    devServer(app, registry.get('webpack.client'))
+    const devServer = registry.get('devServer')
+    if (typeof devServer === 'function') {
+      devServer(app, registry.get('webpack.client'))
+    }
   }
 
   //
