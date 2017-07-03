@@ -17,7 +17,7 @@
     "serve-favicon": "^2.4.2"
   },
   "devDependencies": {
-    "@rispa/eslint-config": "^1.1.0"
+    "@rispa/eslint-config": "^2.0.0"
   },
   "scripts": {
     "start-dev": "better-npm-run server-dev",
@@ -25,8 +25,8 @@
     "start-dev-client": "better-npm-run server-dev-client",
     "start-prod-client": "better-npm-run server-prod-client",
     "start-profile": "better-npm-run server-profile",
-    "lint": "rispa-eslint",
-    "lint:fix": "rispa-eslint --fix"
+    "lint": "rispa-eslint .",
+    "lint:fix": "rispa-eslint . --fix"
   },
   "betterScripts": {
     "server-dev": {
