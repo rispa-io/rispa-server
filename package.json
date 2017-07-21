@@ -17,7 +17,7 @@
     "serve-favicon": "^2.4.2"
   },
   "devDependencies": {
-    "@rispa/eslint-config": "2.0.1"
+    "@rispa/eslint-config": ">=3.0.0"
   },
   "scripts": {
     "start-dev": "better-npm-run server-dev",
