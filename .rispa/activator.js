@@ -1,11 +1,17 @@
-import { start } from '@rispa/core/events'
-import { server } from '../events'
-import runServer from '../src/server'
+const WebpackPluginApi = require('@rispa/webpack')
+const ServerPlugin = require('../src/ServerPlugin')
+const ServerPluginApi = require('../src/ServerPluginApi')
 
-const activator = on => {
-  on(start(server), registry => {
-    runServer(registry)
-  })
+function init(context, config) {
+  return new ServerPlugin(context, config)
 }
 
-export default activator
+function api(instance) {
+  return new ServerPluginApi(instance)
+}
+
+const after = [WebpackPluginApi.pluginName]
+
+module.exports = init
+
+module.exports.api = api

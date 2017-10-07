@@ -1,4 +1,4 @@
-const { server } = require('../events')
-const core = require('@rispa/core')
+const { init } = require('@rispa/core')
+const { startHandler } = require('../src/ServerPluginApi')
 
-core(server())
+init(startHandler)
