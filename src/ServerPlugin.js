@@ -3,13 +3,15 @@ const Express = require('express')
 const compression = require('compression')
 const favicon = require('serve-favicon')
 const { PluginInstance } = require('@rispa/core')
+const ConfigPluginApi = require('@rispa/config').default
 const WebpackPluginApi = require('@rispa/webpack')
 const logger = require('./logger')
 
 class ServerPlugin extends PluginInstance {
-  constructor(context, config) {
-    super(context, config)
+  constructor(context) {
+    super(context)
 
+    this.config = context.get(ConfigPluginApi.pluginName).getConfig()
     this.webpack = context.get(WebpackPluginApi.pluginName)
 
     this.favicon = path.join(__dirname, '../static', 'favicon.ico')

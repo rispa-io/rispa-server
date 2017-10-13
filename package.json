@@ -4,7 +4,7 @@
   "version": "3.0.1",
   "description": "Rispa Server plugin",
   "license": "MIT",
-  "rispa:activator": "./.rispa/activator.js",
+  "rispa:activator": "./src/activator.js",
   "main": "./src/ServerPluginApi.js",
   "dependencies": {
     "@rispa/config": "^3.0.1",
