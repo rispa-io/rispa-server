@@ -1,6 +1,6 @@
-import chalk from 'chalk'
-import ip from 'ip'
-import createDebug from 'debug'
+const chalk = require('chalk')
+const ip = require('ip')
+const createDebug = require('debug')
 
 const log = createDebug('rispa:info:server')
 const logError = createDebug('rispa:error:server')
@@ -36,4 +36,4 @@ ${chalk.blue(`Press ${chalk.italic('CTRL-C')} to stop`)}
   },
 }
 
-export default logger
+module.exports = logger
