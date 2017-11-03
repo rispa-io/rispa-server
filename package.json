@@ -1,7 +1,7 @@
 {
   "name": "@rispa/server",
   "rispa:name": "server",
-  "version": "4.1.0",
+  "version": "4.1.1",
   "description": "Rispa Server plugin",
   "license": "MIT",
   "rispa:activator": "./src/activator.js",
