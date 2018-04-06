@@ -6,6 +6,7 @@ const { PluginInstance } = require('@rispa/core')
 const ConfigPluginApi = require('@rispa/config').default
 const WebpackPluginApi = require('@rispa/webpack')
 const logger = require('./logger')
+const sourceMapSupport = require('source-map-support')
 
 class ServerPlugin extends PluginInstance {
   constructor(context) {
@@ -31,6 +32,10 @@ class ServerPlugin extends PluginInstance {
         port,
       },
     } = this.config
+
+    sourceMapSupport.install({
+      environment: 'node',
+    })
 
     const app = new Express()
 
