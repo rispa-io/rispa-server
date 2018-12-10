@@ -4,7 +4,6 @@ const compression = require('compression')
 const favicon = require('serve-favicon')
 const { PluginInstance } = require('@rispa/core')
 const ConfigPluginApi = require('@rispa/config').default
-const WebpackPluginApi = require('@rispa/webpack')
 const logger = require('./logger')
 const sourceMapSupport = require('source-map-support')
 
@@ -13,7 +12,6 @@ class ServerPlugin extends PluginInstance {
     super(context)
 
     this.config = context.get(ConfigPluginApi.pluginName).getConfig()
-    this.webpack = context.get(WebpackPluginApi.pluginName)
 
     this.favicon = path.join(__dirname, '../static', 'favicon.ico')
     this.renderMethod = null
@@ -48,8 +46,6 @@ class ServerPlugin extends PluginInstance {
     if (process.env.NODE_ENV === 'production') {
       app.use(compression())
       app.use(publicPath, Express.static(outputPath))
-    } else {
-      this.webpack.devServer(app)
     }
 
     //
