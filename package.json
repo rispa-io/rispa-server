@@ -9,6 +9,9 @@
   "dependencies": {
     "@rispa/config": "4.2.x",
     "@rispa/core": "4.2.x",
+    "@rispa/render-client": "1.0.x",
+    "@rispa/webpack": "4.2.x",
+    "@rispa/webpack-javascript": "4.2.x",
     "better-npm-run": "0.1.0",
     "chalk": "^2.4.0",
     "compression": "^1.7.2",
@@ -17,7 +20,9 @@
     "http-proxy": "^1.16.2",
     "ip": "^1.1.5",
     "serve-favicon": "^2.5.0",
-    "source-map-support": "^0.5.4"
+    "source-map-support": "^0.5.4",
+    "webpack-dev-middleware": "^3.4.0",
+    "webpack-hot-middleware": "^2.24.3"
   },
   "devDependencies": {
     "@rispa/eslint-config": ">=3.0.0"
