@@ -9,7 +9,6 @@
   "dependencies": {
     "@rispa/config": "4.2.x",
     "@rispa/core": "4.2.x",
-    "@rispa/render-client": "1.0.x",
     "@rispa/webpack": "4.2.x",
     "@rispa/webpack-javascript": "4.2.x",
     "better-npm-run": "0.1.0",

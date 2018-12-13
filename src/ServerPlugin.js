@@ -5,7 +5,6 @@ const favicon = require('serve-favicon')
 const { PluginInstance } = require('@rispa/core')
 const ConfigPluginApi = require('@rispa/config').default
 const WebpackPluginApi = require('@rispa/webpack')
-const RenderClientPluginApi = require('@rispa/render-client')
 const webpackDevMiddleware = require('webpack-dev-middleware')
 const webpackHotMiddleware = require('webpack-hot-middleware')
 
@@ -14,14 +13,26 @@ const logger = require('./logger')
 class ServerPlugin extends PluginInstance {
   constructor(context) {
     super(context)
+    this.clientRender = undefined
+    this.serverRender = undefined
+    this.app = new Express()
 
     this.config = context.get(ConfigPluginApi.pluginName).getConfig()
     this.webpack = context.get(WebpackPluginApi.pluginName)
-    this.clientRender = context.get(RenderClientPluginApi.pluginName)
     this.favicon = path.join(__dirname, '../static', 'favicon.ico')
-    this.app = new Express()
     this.devServer = this.devServer.bind(this)
     this.runServer = this.runServer.bind(this)
+    this.setClientRender = this.setClientRender.bind(this)
+    this.setServerRender = this.setServerRender.bind(this)
+    this.registerRender = this.registerRender.bind(this)
+  }
+
+  setClientRender(render) {
+    this.clientRender = render
+  }
+
+  setServerRender(render) {
+    this.serverRender = render
   }
 
   devServer(app) {
@@ -48,7 +59,7 @@ class ServerPlugin extends PluginInstance {
 
     compiler.hooks.done.tap('ServerPlugin', (stats => {
       try {
-        const names = Object
+        const assets = Object
           .keys(stats.compilation.assets)
           .filter(script => /\.js$/.test(script))
           .map(script => `${publicPath.replace(/\/$/, '')}/${script}`)
@@ -62,13 +73,9 @@ class ServerPlugin extends PluginInstance {
             }
             return result
           }, { chunks: [] })
-        const render = this.clientRender.render(names)
-        this.app.use('*', (req, res) => {
-          const html = render(req)
-          res.send(html)
-        })
+        this.registerRender(assets)
       } catch (error) {
-        logger(error)
+        logger.error(error)
       }
     }))
   }
@@ -82,6 +89,20 @@ class ServerPlugin extends PluginInstance {
     app.use(compression())
     app.use(favicon(this.favicon))
     app.use(publicPath, Express.static(outputPath))
+  }
+
+  registerRender(assets) {
+    let render
+    if (process.env.DISABLE_SSR) {
+      render = this.clientRender(assets)
+    } else {
+      render = this.serverRender(assets)
+    }
+
+    this.app.use('*', (req, res) => {
+      const html = render(req)
+      res.send(html)
+    })
   }
 
   runServer() {

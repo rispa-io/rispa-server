@@ -6,6 +6,14 @@ class ServerPluginApi extends PluginApi {
     instance.runServer()
   }
 
+  setClientRender(render) {
+    this.instance.setClientRender(render)
+  }
+
+  setServerRender(render) {
+    this.instance.setServerRender(render)
+  }
+
   runServer() {
     this.instance.runServer()
   }
