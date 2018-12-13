@@ -4,63 +4,121 @@ const compression = require('compression')
 const favicon = require('serve-favicon')
 const { PluginInstance } = require('@rispa/core')
 const ConfigPluginApi = require('@rispa/config').default
+const WebpackPluginApi = require('@rispa/webpack')
+const webpackDevMiddleware = require('webpack-dev-middleware')
+const webpackHotMiddleware = require('webpack-hot-middleware')
+
 const logger = require('./logger')
-const sourceMapSupport = require('source-map-support')
 
 class ServerPlugin extends PluginInstance {
   constructor(context) {
     super(context)
+    this.clientRender = undefined
+    this.serverRender = undefined
+    this.app = new Express()
 
     this.config = context.get(ConfigPluginApi.pluginName).getConfig()
-
+    this.webpack = context.get(WebpackPluginApi.pluginName)
     this.favicon = path.join(__dirname, '../static', 'favicon.ico')
-    this.renderMethod = null
+    this.devServer = this.devServer.bind(this)
+    this.runServer = this.runServer.bind(this)
+    this.setClientRender = this.setClientRender.bind(this)
+    this.setServerRender = this.setServerRender.bind(this)
+    this.registerRender = this.registerRender.bind(this)
   }
 
-  setRenderMethod(renderMethod) {
-    this.renderMethod = renderMethod
+  setClientRender(render) {
+    this.clientRender = render
   }
 
-  runServer() {
+  setServerRender(render) {
+    this.serverRender = render
+  }
+
+  devServer(app) {
+    const {
+      publicPath,
+    } = this.config
+    const compiler = this.webpack.getCompiler('client')
+
+    const middleware = webpackDevMiddleware(compiler, {
+      publicPath,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+      },
+      stats: {
+        colors: true,
+      },
+      logTime: true,
+      logLevel: 'warn',
+      serverSideRender: true,
+    })
+
+    app.use(middleware)
+    app.use(webpackHotMiddleware(compiler))
+
+    compiler.hooks.done.tap('ServerPlugin', (stats => {
+      try {
+        const assets = Object
+          .keys(stats.compilation.assets)
+          .filter(script => /\.js$/.test(script))
+          .map(script => `${publicPath.replace(/\/$/, '')}/${script}`)
+          .reduce((result, script) => {
+            if (/vendor/.test(script)) {
+              result.vendor = script
+            } else if (/polyfill/.test(script)) {
+              result.polyfill = script
+            } else {
+              result.chunks.push(script)
+            }
+            return result
+          }, { chunks: [] })
+        this.registerRender(assets)
+      } catch (error) {
+        logger.error(error)
+      }
+    }))
+  }
+
+  prodServer(app) {
     const {
       publicPath,
       outputPath,
+    } = this.config
+
+    app.use(compression())
+    app.use(favicon(this.favicon))
+    app.use(publicPath, Express.static(outputPath))
+  }
+
+  registerRender(assets) {
+    let render
+    if (process.env.DISABLE_SSR) {
+      render = this.clientRender(assets)
+    } else {
+      render = this.serverRender(assets)
+    }
+
+    this.app.use('*', (req, res) => {
+      const html = render(req)
+      res.send(html)
+    })
+  }
+
+  runServer() {
+    if (process.env.NODE_ENV === 'development') {
+      this.devServer(this.app)
+    } else {
+      this.prodServer(this.app)
+    }
+    const {
       server: {
         host,
         port,
       },
     } = this.config
 
-    sourceMapSupport.install({
-      environment: 'node',
-    })
-
-    const app = new Express()
-
-    //
-    // common middlewares
-    //
-    app.use(compression())
-    app.use(favicon(this.favicon))
-
-    if (process.env.NODE_ENV === 'production') {
-      app.use(compression())
-      app.use(publicPath, Express.static(outputPath))
-    }
-
-    //
-    // render middleware
-    //
-    if (this.renderMethod) {
-      this.renderMethod(app)
-    } else {
-      throw new Error('No render method found')
-    }
-
-    //
-    // start listen
-    //
-    app.listen(port, host, err => {
+    this.app.listen(port, host, err => {
       if (err) {
         logger.error(err.message)
       } else {
