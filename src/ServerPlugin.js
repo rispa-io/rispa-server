@@ -5,8 +5,7 @@ const favicon = require('serve-favicon')
 const { PluginInstance } = require('@rispa/core')
 const ConfigPluginApi = require('@rispa/config').default
 const WebpackPluginApi = require('@rispa/webpack')
-const webpackDevMiddleware = require('webpack-dev-middleware')
-const webpackHotMiddleware = require('webpack-hot-middleware')
+const clientWebpackConfig = require('./configs/client.wpc')
 
 const logger = require('./logger')
 
@@ -27,6 +26,10 @@ class ServerPlugin extends PluginInstance {
     this.setServerRender = this.setServerRender.bind(this)
   }
 
+  start() {
+    this.webpack.addClientConfig(clientWebpackConfig)
+  }
+
   setClientRender(render) {
     this.clientRender = render
   }
@@ -41,7 +44,7 @@ class ServerPlugin extends PluginInstance {
     } = this.config
     const compiler = this.webpack.getCompiler('client')
 
-    const middleware = webpackDevMiddleware(compiler, {
+    app.use(require('webpack-dev-middleware')(compiler, {
       publicPath,
       headers: {
         'Access-Control-Allow-Origin': '*',
@@ -52,10 +55,9 @@ class ServerPlugin extends PluginInstance {
       logTime: true,
       logLevel: 'warn',
       serverSideRender: true,
-    })
+    }))
 
-    app.use(middleware)
-    app.use(webpackHotMiddleware(compiler))
+    app.use(require('webpack-hot-middleware')(compiler))
 
     compiler.hooks.done.tap('ServerPlugin', (stats => {
       try {
@@ -98,7 +100,20 @@ class ServerPlugin extends PluginInstance {
       },
     } = this.config
 
-    const render = process.env.DISABLE_SSR ? this.clientRender : this.serverRender
+    let render
+    if (process.env.DISABLE_SSR) {
+      if (!this.clientRender) {
+        throw new Error('Client side render not specified, see more (https://github.com/rispa-io/rispa-server/)')
+      }
+
+      render = this.clientRender(assets)
+    } else {
+      if (!this.serverRender) {
+        throw new Error('Server side render not specified, see more (https://github.com/rispa-io/rispa-server/)')
+      }
+
+      render = this.serverRender(assets)
+    }
 
     if (process.env.NODE_ENV === 'development') {
       this.devServer(this.app)

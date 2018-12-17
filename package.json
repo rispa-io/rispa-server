@@ -7,6 +7,7 @@
   "rispa:activator": "./src/activator.js",
   "main": "./src/ServerPluginApi.js",
   "dependencies": {
+    "@webpack-blocks/webpack": "^2.0.0-alpha",
     "@rispa/config": "4.2.x",
     "@rispa/core": "4.2.x",
     "@rispa/webpack": "4.2.x",
@@ -21,7 +22,8 @@
     "serve-favicon": "^2.5.0",
     "source-map-support": "^0.5.4",
     "webpack-dev-middleware": "^3.4.0",
-    "webpack-hot-middleware": "^2.24.3"
+    "webpack-hot-middleware": "^2.24.3",
+    "webpack": "4.x.x"
   },
   "devDependencies": {
     "@rispa/eslint-config": ">=3.0.0"
