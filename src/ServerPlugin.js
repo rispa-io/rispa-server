@@ -62,13 +62,18 @@ class ServerPlugin extends PluginInstance {
 
     app.use(require('webpack-hot-middleware')(compiler))
 
-    compiler.hooks.done.tap('ServerPlugin', (stats => {
+    compiler.hooks.done.tap('ServerPlugin', stats => {
       try {
-        this.assets = Object
-          .keys(stats.compilation.assets)
-          .filter(script => /\.js$/.test(script))
-          .map(script => `${publicPath.replace(/\/$/, '')}/${script}`)
-          .reduce((result, script) => {
+        const assetPublicPath = publicPath.replace(/\/$/, '')
+        const compiledAssets = Object.keys(stats.compilation.assets)
+        const cssAssets = compiledAssets.filter(item => /\.css$/.test(item))
+        const jsAssets = compiledAssets
+          .filter(item => /\.js$/.test(item))
+          .map(item => `${assetPublicPath}/${item}`)
+
+        this.assets = {
+          link: cssAssets.map(item => `${assetPublicPath}/${item}`),
+          script: jsAssets.reduce((result, script) => {
             if (/vendor/.test(script)) {
               result.vendor = script
             } else if (/polyfill/.test(script)) {
@@ -77,11 +82,12 @@ class ServerPlugin extends PluginInstance {
               result.chunks.push(script)
             }
             return result
-          }, { chunks: [] })
+          }, { chunks: [] }),
+        }
       } catch (error) {
         logger.error(error)
       }
-    }))
+    })
   }
 
   prodServer(app) {
