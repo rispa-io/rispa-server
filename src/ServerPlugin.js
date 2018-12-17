@@ -15,7 +15,6 @@ class ServerPlugin extends PluginInstance {
     super(context)
     this.clientRender = undefined
     this.serverRender = undefined
-    this.app = new Express()
     this.assets = undefined
 
     this.config = context.get(ConfigPluginApi.pluginName).getConfig()
@@ -98,20 +97,22 @@ class ServerPlugin extends PluginInstance {
       },
     } = this.config
 
+    const app = new Express()
+
     const render = process.env.DISABLE_SSR ? this.clientRender : this.serverRender
 
     if (process.env.NODE_ENV === 'development') {
-      this.devServer(this.app)
+      this.devServer(app)
     } else {
-      this.prodServer(this.app)
+      this.prodServer(app)
     }
 
-    this.app.use('*', (req, res) => {
+    app.use('*', (req, res) => {
       const html = render(req, this.assets)
       res.send(html)
     })
 
-    this.app.listen(port, host, err => {
+    app.listen(port, host, err => {
       if (err) {
         logger.error(err.message)
       } else {
