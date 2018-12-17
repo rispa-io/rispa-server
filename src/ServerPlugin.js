@@ -16,6 +16,7 @@ class ServerPlugin extends PluginInstance {
     this.clientRender = undefined
     this.serverRender = undefined
     this.app = new Express()
+    this.assets = undefined
 
     this.config = context.get(ConfigPluginApi.pluginName).getConfig()
     this.webpack = context.get(WebpackPluginApi.pluginName)
@@ -24,7 +25,6 @@ class ServerPlugin extends PluginInstance {
     this.runServer = this.runServer.bind(this)
     this.setClientRender = this.setClientRender.bind(this)
     this.setServerRender = this.setServerRender.bind(this)
-    this.registerRender = this.registerRender.bind(this)
   }
 
   setClientRender(render) {
@@ -59,7 +59,7 @@ class ServerPlugin extends PluginInstance {
 
     compiler.hooks.done.tap('ServerPlugin', (stats => {
       try {
-        const assets = Object
+        this.assets = Object
           .keys(stats.compilation.assets)
           .filter(script => /\.js$/.test(script))
           .map(script => `${publicPath.replace(/\/$/, '')}/${script}`)
@@ -73,7 +73,6 @@ class ServerPlugin extends PluginInstance {
             }
             return result
           }, { chunks: [] })
-        this.registerRender(assets)
       } catch (error) {
         logger.error(error)
       }
@@ -91,32 +90,26 @@ class ServerPlugin extends PluginInstance {
     app.use(publicPath, Express.static(outputPath))
   }
 
-  registerRender(assets) {
-    let render
-    if (process.env.DISABLE_SSR) {
-      render = this.clientRender(assets)
-    } else {
-      render = this.serverRender(assets)
-    }
-
-    this.app.use('*', (req, res) => {
-      const html = render(req)
-      res.send(html)
-    })
-  }
-
   runServer() {
-    if (process.env.NODE_ENV === 'development') {
-      this.devServer(this.app)
-    } else {
-      this.prodServer(this.app)
-    }
     const {
       server: {
         host,
         port,
       },
     } = this.config
+
+    const render = process.env.DISABLE_SSR ? this.clientRender : this.serverRender
+
+    if (process.env.NODE_ENV === 'development') {
+      this.devServer(this.app)
+    } else {
+      this.prodServer(this.app)
+    }
+
+    this.app.use('*', (req, res) => {
+      const html = render(req, this.assets)
+      res.send(html)
+    })
 
     this.app.listen(port, host, err => {
       if (err) {
