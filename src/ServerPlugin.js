@@ -72,8 +72,8 @@ class ServerPlugin extends PluginInstance {
           .map(item => `${assetPublicPath}/${item}`)
 
         this.assets = {
-          link: cssAssets.map(item => `${assetPublicPath}/${item}`),
-          script: jsAssets.reduce((result, script) => {
+          css: cssAssets.map(item => `${assetPublicPath}/${item}`),
+          js: jsAssets.reduce((result, script) => {
             if (/vendor/.test(script)) {
               result.vendor = script
             } else if (/polyfill/.test(script)) {
