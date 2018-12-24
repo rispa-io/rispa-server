@@ -2,7 +2,8 @@ const path = require('path')
 const Express = require('express')
 const compression = require('compression')
 const favicon = require('serve-favicon')
-const { PluginInstance } = require('@rispa/core')
+const JSONFile = require('jsonfile')
+const { PluginInstance, createLogger } = require('@rispa/core')
 const ConfigPluginApi = require('@rispa/config').default
 const WebpackPluginApi = require('@rispa/webpack')
 const clientWebpackConfig = require('./configs/client.wpc')
@@ -10,7 +11,47 @@ const clientWebpackConfig = require('./configs/client.wpc')
 const logger = require('./logger')
 
 const emptyRender = side => () => {
-  throw new Error(`${side} side render not specified, see more (https://github.com/rispa-io/rispa-server/)`)
+  logger.error(new Error(`${side} side render not specified, see more (https://github.com/rispa-io/rispa-server/)`))
+
+  process.exit(1)
+}
+
+const getAssets = (assetsByChunkName, publicPath) => {
+  try {
+    const assetPublicPath = publicPath.replace(/\/$/, '')
+
+    const compiledAssets = Object.values(assetsByChunkName)
+      .reduce((result, chunk) => result.concat(chunk), [])
+
+    const cssAssets = compiledAssets
+      .filter(item => /\.css$/.test(item))
+      .map(item => `${assetPublicPath}/${item}`)
+
+    const jsAssets = compiledAssets
+      .filter(item => /\.js$/.test(item))
+      .map(item => `${assetPublicPath}/${item}`)
+      .reduce((result, script) => {
+        if (/vendor/.test(script)) {
+          result.vendor = script
+        } else if (/polyfill/.test(script)) {
+          result.polyfill = script
+        } else {
+          result.chunks.push(script)
+        }
+        return result
+      }, { chunks: [] })
+
+    return {
+      css: cssAssets,
+      js: jsAssets,
+    }
+  } catch (error) {
+    logger.error(error)
+
+    process.exit(1)
+
+    throw error
+  }
 }
 
 class ServerPlugin extends PluginInstance {
@@ -41,11 +82,21 @@ class ServerPlugin extends PluginInstance {
     this.serverRender = render
   }
 
+  getRender(side) {
+    if (side === 'client') {
+      return this.clientRender
+    } else if (side === 'server') {
+      return this.serverRender
+    }
+
+    throw new Error(`Invalid render side "${side}"`)
+  }
+
   devServer(app) {
     const {
       publicPath,
     } = this.config
-    const compiler = this.webpack.getCompiler('client')
+    const compiler = this.webpack.getClientCompiler()
 
     app.use(require('webpack-dev-middleware')(compiler, {
       publicPath,
@@ -55,38 +106,25 @@ class ServerPlugin extends PluginInstance {
       stats: {
         colors: true,
       },
-      logTime: true,
-      logLevel: 'warn',
+      logger: createLogger('@rispa/webpack-dev'),
       serverSideRender: true,
+      index: false,
     }))
-
     app.use(require('webpack-hot-middleware')(compiler))
 
+    let onDone
     compiler.hooks.done.tap('ServerPlugin', stats => {
-      try {
-        const assetPublicPath = publicPath.replace(/\/$/, '')
-        const compiledAssets = Object.keys(stats.compilation.assets)
-        const cssAssets = compiledAssets.filter(item => /\.css$/.test(item))
-        const jsAssets = compiledAssets
-          .filter(item => /\.js$/.test(item))
-          .map(item => `${assetPublicPath}/${item}`)
+      const { assetsByChunkName } = stats.toJson()
+      this.assets = getAssets(assetsByChunkName, publicPath)
 
-        this.assets = {
-          css: cssAssets.map(item => `${assetPublicPath}/${item}`),
-          js: jsAssets.reduce((result, script) => {
-            if (/vendor/.test(script)) {
-              result.vendor = script
-            } else if (/polyfill/.test(script)) {
-              result.polyfill = script
-            } else {
-              result.chunks.push(script)
-            }
-            return result
-          }, { chunks: [] }),
-        }
-      } catch (error) {
-        logger.error(error)
+      if (onDone) {
+        onDone()
+        onDone = false
       }
+    })
+
+    return new Promise(resolve => {
+      onDone = resolve
     })
   }
 
@@ -99,9 +137,21 @@ class ServerPlugin extends PluginInstance {
     app.use(compression())
     app.use(favicon(this.favicon))
     app.use(publicPath, Express.static(outputPath))
+
+    try {
+      const { assetsByChunkName } = JSONFile.readFileSync(path.resolve(outputPath, './stats.json'))
+
+      this.assets = getAssets(assetsByChunkName, publicPath)
+    } catch (error) {
+      if (error.code === 'ENOENT') {
+        throw new Error('`stats.json` file not found, you need build client before launch start prod server')
+      }
+
+      throw error
+    }
   }
 
-  runServer() {
+  async runServer(side = 'client') {
     const {
       server: {
         host,
@@ -110,17 +160,16 @@ class ServerPlugin extends PluginInstance {
     } = this.config
 
     const app = new Express()
-
-    const render = process.env.DISABLE_SSR ? this.clientRender : this.serverRender
+    const render = this.getRender(side)
 
     if (process.env.NODE_ENV === 'development') {
-      this.devServer(app)
+      await this.devServer(app)
     } else {
-      this.prodServer(app)
+      await this.prodServer(app)
     }
 
-    app.use('*', (req, res) => {
-      const html = render(req, this.assets)
+    app.use('*', async (req, res) => {
+      const html = await render(req, this.assets)
       res.send(html)
     })
 

@@ -6,6 +6,7 @@
   "license": "MIT",
   "rispa:activator": "./src/activator.js",
   "main": "./src/ServerPluginApi.js",
+  "bin": "./bin/server.js",
   "dependencies": {
     "@webpack-blocks/webpack": "^2.0.0-alpha",
     "@rispa/config": "4.2.x",
@@ -13,68 +14,27 @@
     "@rispa/webpack": "4.2.x",
     "@rispa/webpack-javascript": "4.2.x",
     "better-npm-run": "0.1.0",
-    "chalk": "^2.4.0",
-    "compression": "^1.7.2",
-    "debug": "^3.1.0",
+    "compression": "^1.7.3",
     "express": "^4.16.3",
     "http-proxy": "^1.16.2",
     "ip": "^1.1.5",
+    "jsonfile": "^5.0.0",
     "serve-favicon": "^2.5.0",
     "source-map-support": "^0.5.4",
     "webpack-dev-middleware": "^3.4.0",
     "webpack-hot-middleware": "^2.24.3",
-    "webpack": "4.x.x"
+    "webpack": "4.x.x",
+    "minimist": "^1.2.0"
   },
   "devDependencies": {
     "@rispa/eslint-config": ">=3.0.0"
   },
   "scripts": {
-    "start-dev": "better-npm-run server-dev",
-    "start-prod": "better-npm-run server-prod",
-    "start-dev-client": "better-npm-run server-dev-client",
-    "start-prod-client": "better-npm-run server-prod-client",
-    "start-profile": "better-npm-run server-profile",
     "lint": "rispa-eslint .",
-    "lint:fix": "rispa-eslint . --fix"
-  },
-  "betterScripts": {
-    "server-dev": {
-      "command": "node ./bin/server.js",
-      "env": {
-        "NODE_ENV": "development",
-        "DEBUG": "rispa:*"
-      }
-    },
-    "server-prod": {
-      "command": "node ./bin/server.js",
-      "env": {
-        "NODE_ENV": "production",
-        "DEBUG": "rispa:*"
-      }
-    },
-    "server-dev-client": {
-      "command": "node ./bin/server.js",
-      "env": {
-        "NODE_ENV": "development",
-        "DISABLE_SSR": true,
-        "DEBUG": "rispa:*"
-      }
-    },
-    "server-prod-client": {
-      "command": "node ./bin/server.js",
-      "env": {
-        "NODE_ENV": "production",
-        "DISABLE_SSR": true,
-        "DEBUG": "rispa:*"
-      }
-    },
-    "server-profile": {
-      "command": "node ./bin/server.js",
-      "env": {
-        "NODE_ENV": "development",
-        "PROFILE_SSR": true,
-        "DEBUG": "rispa:*"
-      }
-    }
+    "lint:fix": "rispa-eslint . --fix",
+    "start-dev": "NODE_ENV=development node ./bin/server.js --side=server",
+    "start-prod": "NODE_ENV=production node ./bin/server.js --side=server",
+    "start-dev-client": "NODE_ENV=development node ./bin/server.js --side=client",
+    "start-prod-client": "NODE_ENV=production node ./bin/server.js --side=client"
   }
 }

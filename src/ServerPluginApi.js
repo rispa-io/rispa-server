@@ -3,7 +3,9 @@ const { PluginApi } = require('@rispa/core')
 class ServerPluginApi extends PluginApi {
   static startHandler(context) {
     const instance = context.get(ServerPluginApi.pluginName)
-    instance.runServer()
+    const { side } = require('minimist')(process.argv.slice(2))
+
+    return instance.runServer(side)
   }
 
   setClientRender(render) {
@@ -14,8 +16,8 @@ class ServerPluginApi extends PluginApi {
     this.instance.setServerRender(render)
   }
 
-  runServer() {
-    this.instance.runServer()
+  runServer(side) {
+    return this.instance.runServer(side)
   }
 }
 
