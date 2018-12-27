@@ -22,29 +22,22 @@ const getAssets = (assetsByChunkName, publicPath) => {
 
     const compiledAssets = Object.values(assetsByChunkName)
       .reduce((result, chunk) => result.concat(chunk), [])
-
-    const cssAssets = compiledAssets
-      .filter(item => /\.css$/.test(item))
       .map(item => `${assetPublicPath}/${item}`)
-
-    const jsAssets = compiledAssets
-      .filter(item => /\.js$/.test(item))
-      .map(item => `${assetPublicPath}/${item}`)
-      .reduce((result, script) => {
-        if (/vendor/.test(script)) {
-          result.vendor = script
-        } else if (/polyfill/.test(script)) {
-          result.polyfill = script
-        } else {
-          result.chunks.push(script)
+      .reduce((assets, item) => {
+        if (/\.css$/.test(item)) {
+          assets.css.push(item)
+        } else if (/\.js$/.test(item)) {
+          if (/vendors/.test(item)) {
+            assets.js.vendors.push(item)
+          } else {
+            assets.js.chunks.push(item)
+          }
         }
-        return result
-      }, { chunks: [] })
 
-    return {
-      css: cssAssets,
-      js: jsAssets,
-    }
+        return assets
+      }, { css: [], js: { vendors: [], chunks: [] } })
+
+    return compiledAssets
   } catch (error) {
     logger.error(error)
 
@@ -169,8 +162,14 @@ class ServerPlugin extends PluginInstance {
     }
 
     app.use('*', async (req, res) => {
-      const html = await render(req, this.assets)
-      res.send(html)
+      try {
+        const html = await render(req, this.assets)
+        res.send(html)
+      } catch (error) {
+        logger.error(error)
+
+        res.send(error.message || error)
+      }
     })
 
     app.listen(port, host, err => {

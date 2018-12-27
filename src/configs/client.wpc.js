@@ -4,7 +4,7 @@ module.exports = group([
   env('development', [
     (context, { merge }) => merge({
       entry: {
-        main: [
+        client: [
           require.resolve('webpack-hot-middleware/client'),
         ],
       },
