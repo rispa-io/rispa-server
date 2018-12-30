@@ -1,4 +1,5 @@
 const { PluginApi } = require('@rispa/core')
+const errors = require('./errors')
 
 class ServerPluginApi extends PluginApi {
   static startHandler(context) {
@@ -22,5 +23,7 @@ class ServerPluginApi extends PluginApi {
 }
 
 ServerPluginApi.pluginName = '@rispa/server'
+
+ServerPluginApi.errors = errors
 
 module.exports = ServerPluginApi
